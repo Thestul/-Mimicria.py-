@@ -7,6 +7,7 @@
 </p>
 
 **MIMICRIA** is a Python application designed to inspect Roblox avatar profiles, extract equipped asset IDs, and generate executable commands to mimic their outfit in-game.
+PyQt6 is needed to run it
 
 Works seamlessly on both **Windows** and **Linux**.
 
