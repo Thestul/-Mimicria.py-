@@ -2,6 +2,12 @@
 
 import sys
 import os
+import subprocess
+import importlib.util
+
+if importlib.util.find_spec("PyQt6") is None:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyQt6"])
+
 import json
 import time
 import random
