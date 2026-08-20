@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
     QPushButton, QLabel, QScrollArea, QCheckBox, QFrame, QMessageBox,
     QTabWidget, QComboBox, QGridLayout, QGraphicsDropShadowEffect,
-    QTextEdit, QInputDialog, QListView
+    QTextEdit, QInputDialog, QListView, QDialog
 )
 from PyQt6.QtGui import QPixmap, QImage, QFont, QColor, QKeySequence, QShortcut, QTextCursor
 from PyQt6.QtCore import (
@@ -41,6 +41,7 @@ LANGS = {
         "input_nick_ph": "Введи Roblox Nick...",
         "btn_fetch": "🔍 Загрузить",
         "avatar_placeholder": "Введите ник",
+        "notes_placeholder": "Заметки...",
         "btn_swap": "🎲 Заменить Offsale",
         "saved_outfits": "💾 Сохранённые сеты:",
         "btn_load_set": "📂 Загрузить",
@@ -51,6 +52,7 @@ LANGS = {
         "cat_types": ["Рубашки", "Штаны", "Шляпы/Аксессуары", "Волосы"],
         "btn_search": "🔍 Найти",
         "btn_copy": "📋 Копировать",
+        "btn_open_page": "🌐 Открыть страницу",
         "btn_add_player": "➕ Добавить игроку",
         "btn_del": "🗑 Удалить",
         "chip_catalog": "В каталоге",
@@ -80,6 +82,7 @@ LANGS = {
         "input_nick_ph": "Enter Roblox Username...",
         "btn_fetch": "🔍 Load",
         "avatar_placeholder": "Enter Username",
+        "notes_placeholder": "Notes...",
         "btn_swap": "🎲 Swap Offsale",
         "saved_outfits": "💾 Saved Outfits:",
         "btn_load_set": "📂 Load",
@@ -90,6 +93,7 @@ LANGS = {
         "cat_types": ["Shirts", "Pants", "Hats/Accessories", "Hair"],
         "btn_search": "🔍 Search",
         "btn_copy": "📋 Copy",
+        "btn_open_page": "🌐 Open Page",
         "btn_add_player": "➕ Add to Player",
         "btn_del": "🗑 Delete",
         "chip_catalog": "In Catalog",
@@ -116,21 +120,84 @@ FAVORITE_SHIRTS = ["5319900634", "6070624075", "6829585000"]
 FAVORITE_PANTS = ["5319909330", "6070625000"]
 
 # ---------------------------------------------------------------------------
-# Палитра
+# Палитра — берётся из themes.json (тема "dark" по умолчанию), можно
+# переключить на "light" или добавить свою тему в файл вручную/через диалог.
 # ---------------------------------------------------------------------------
-BG = "#17181c"
-SURFACE = "#1f2126"
-SURFACE_ALT = "#262931"
-BORDER = "#33363e"
-ACCENT = "#5b8def"
-ACCENT_HOVER = "#6f9bf2"
-GREEN = "#3ecf8e"
-RED = "#f26d6d"
-ORANGE = "#e6a23c"
-TEXT = "#eef0f3"
-TEXT_DIM = "#9aa0ac"
+THEMES_FILE = Path(__file__).resolve().parent / "themes.json"
+
+DEFAULT_THEMES = {
+    "dark": {
+        "BG": "#0d0d0d", "SURFACE": "#161616", "SURFACE_ALT": "#1f1f1f",
+        "BORDER": "#2c2c2c", "ACCENT": "#f5f5f5", "ACCENT_HOVER": "#ffffff",
+        "GREEN": "#3ecf8e", "RED": "#ff4d4d", "ORANGE": "#f5f5f5",
+        "TEXT": "#f5f5f5", "TEXT_DIM": "#8a8a8a", "ON_ACCENT": "#0d0d0d",
+    },
+    "light": {
+        "BG": "#f5f5f5", "SURFACE": "#ffffff", "SURFACE_ALT": "#ececec",
+        "BORDER": "#dcdcdc", "ACCENT": "#0d0d0d", "ACCENT_HOVER": "#2a2a2a",
+        "GREEN": "#0d0d0d", "RED": "#d63333", "ORANGE": "#0d0d0d",
+        "TEXT": "#0d0d0d", "TEXT_DIM": "#6b6b6b", "ON_ACCENT": "#f5f5f5",
+    },
+}
+
+
+def load_themes() -> dict:
+    if THEMES_FILE.exists():
+        try:
+            with open(THEMES_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                merged = dict(DEFAULT_THEMES)
+                merged.update(data)
+                return merged
+        except Exception:
+            pass
+    return dict(DEFAULT_THEMES)
+
+
+def save_themes(themes: dict):
+    with open(THEMES_FILE, "w", encoding="utf-8") as f:
+        json.dump(themes, f, ensure_ascii=False, indent=2)
+
+
+ACTIVE_THEME_FILE = Path(__file__).resolve().parent / "active_theme.json"
+
+
+def load_active_theme_name() -> str:
+    if ACTIVE_THEME_FILE.exists():
+        try:
+            with open(ACTIVE_THEME_FILE, "r", encoding="utf-8") as f:
+                return json.load(f).get("theme", "dark")
+        except Exception:
+            pass
+    return "dark"
+
+
+def save_active_theme_name(name: str):
+    with open(ACTIVE_THEME_FILE, "w", encoding="utf-8") as f:
+        json.dump({"theme": name}, f)
+
+
+_THEMES = load_themes()
+_ACTIVE_THEME_NAME = load_active_theme_name()
+_ACTIVE = _THEMES.get(_ACTIVE_THEME_NAME, _THEMES["dark"])
+
+BG = _ACTIVE["BG"]
+SURFACE = _ACTIVE["SURFACE"]
+SURFACE_ALT = _ACTIVE["SURFACE_ALT"]
+BORDER = _ACTIVE["BORDER"]
+ACCENT = _ACTIVE["ACCENT"]
+ACCENT_HOVER = _ACTIVE["ACCENT_HOVER"]
+GREEN = _ACTIVE["GREEN"]
+RED = _ACTIVE["RED"]
+ORANGE = _ACTIVE["ORANGE"]
+TEXT = _ACTIVE["TEXT"]
+TEXT_DIM = _ACTIVE["TEXT_DIM"]
+ON_ACCENT = _ACTIVE.get("ON_ACCENT", "#0d0d0d")
 
 ICON_DISPLAY_SIZE = 84
+ICON_SIZE_MIN = 48
+ICON_SIZE_MAX = 160
+ICON_SIZE_STEP = 12
 AVATAR_DISPLAY_SIZE = 220
 MAX_PARALLEL_LOADS = 6
 
@@ -310,6 +377,7 @@ class FetchWorker(QThread):
 
             self.finished.emit({
                 "username": self.username,
+                "user_id": user_id,
                 "avatar_img": avatar_img_url,
                 "items": items
             })
@@ -339,6 +407,39 @@ LAYERED_NAME_MARKERS = ("layered", "layer", "3d pants", "3d shirt")
 def looks_layered(name: str) -> bool:
     low = name.lower()
     return any(marker in low for marker in LAYERED_NAME_MARKERS)
+
+
+class WikiPageLoader(QThread):
+    loaded = pyqtSignal(str)
+
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
+
+    def run(self):
+        import re
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            req = urllib.request.Request(self.url, headers=headers)
+            with urllib.request.urlopen(req, timeout=15) as res:
+                html = res.read().decode("utf-8", errors="ignore")
+            m = re.search(r'<div class="mw-parser-output">(.*?)<div class="printfooter"', html, re.S)
+            content = m.group(1) if m else html
+            content = re.sub(r'<script.*?</script>', '', content, flags=re.S)
+            content = re.sub(r'<style.*?</style>', '', content, flags=re.S)
+            content = re.sub(r'<[^>]+>', ' ', content)
+            content = content.replace('&nbsp;', ' ').replace('&amp;', '&')
+            content = re.sub(r'\s*\n\s*', '\n', content)
+            content = re.sub(r'[ \t]{2,}', ' ', content)
+            content = re.sub(r'\n{3,}', '\n\n', content).strip()
+            self.loaded.emit(content[:8000] if content else "No content extracted.")
+        except Exception as e:
+            self.loaded.emit(f"Failed to load page: {e}\n\nUse 'Open in browser' instead.")
 
 
 class CatalogWorker(QThread):
@@ -428,7 +529,8 @@ class ImageLoadTask(QRunnable):
 
     def run(self):
         try:
-            cached = ICON_CACHE.get(self.url)
+            cache_key = f"{self.url}@{self.display_size}"
+            cached = ICON_CACHE.get(cache_key)
             if cached is not None:
                 self.signals.loaded.emit(self.target_ref, cached)
                 return
@@ -444,7 +546,7 @@ class ImageLoadTask(QRunnable):
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             )
-            ICON_CACHE[self.url] = pix
+            ICON_CACHE[cache_key] = pix
             self.signals.loaded.emit(self.target_ref, pix)
         except Exception:
             pass
@@ -529,7 +631,7 @@ class DebugPanel(QWidget):
                 background: {BG};
                 color: {TEXT};
                 border: 1px solid {BORDER};
-                border-radius: 8px;
+                border-radius: 20px;
                 padding: 8px;
                 font-family: 'JetBrains Mono', 'Consolas', monospace;
                 font-size: 11px;
@@ -603,13 +705,13 @@ def primary_button(text):
         QPushButton {{
             padding: 10px 16px;
             background: {ACCENT};
-            color: white;
+            color: {ON_ACCENT};
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 20px;
             border: none;
         }}
         QPushButton:hover {{ background: {ACCENT_HOVER}; }}
-        QPushButton:pressed {{ background: #4a78d1; }}
+        QPushButton:pressed {{ background: #cccccc; }}
     """)
     return btn
 
@@ -623,7 +725,7 @@ def ghost_button(text, color=TEXT_DIM):
             background: transparent;
             color: {color};
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 20px;
             border: 1px solid {BORDER};
         }}
         QPushButton:hover {{ background: {SURFACE_ALT}; color: {TEXT}; }}
@@ -640,8 +742,10 @@ def line_edit(placeholder):
             background: {SURFACE};
             color: {TEXT};
             border: 1px solid {BORDER};
-            border-radius: 8px;
+            border-radius: 20px;
             font-size: 13px;
+            selection-background-color: {ACCENT};
+            selection-color: {ON_ACCENT};
         }}
         QLineEdit:focus {{ border: 1px solid {ACCENT}; }}
     """)
@@ -655,12 +759,13 @@ def styled_combo():
     view.setSpacing(2)
     view.setUniformItemSizes(True)
     view.setAlternatingRowColors(False)
+    view.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
     view.setStyleSheet(f"""
         QListView {{
             background: {SURFACE};
             color: {TEXT};
             border: 1px solid {BORDER};
-            border-radius: 8px;
+            border-radius: 20px;
             outline: none;
             padding: 4px;
         }}
@@ -670,16 +775,27 @@ def styled_combo():
             border: none;
         }}
         QListView::item:hover {{ background: {SURFACE_ALT}; }}
-        QListView::item:selected {{ background: {ACCENT}; color: white; }}
+        QListView::item:selected {{ background: {ACCENT}; color: {ON_ACCENT}; }}
     """)
     cb.setView(view)
+
+    _orig_show_popup = cb.showPopup
+    def _show_popup():
+        popup = cb.view().window()
+        popup.setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint
+        )
+        popup.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        popup.setStyleSheet(f"background: {SURFACE}; border-radius: 20px;")
+        _orig_show_popup()
+    cb.showPopup = _show_popup
     cb.setStyleSheet(f"""
         QComboBox {{
             padding: 9px 14px;
             background: {SURFACE};
             color: {TEXT};
             border: 1px solid {BORDER};
-            border-radius: 8px;
+            border-radius: 20px;
             font-weight: 600;
             font-size: 13px;
         }}
@@ -691,6 +807,12 @@ def styled_combo():
         QComboBox::down-arrow {{
             width: 10px;
             height: 10px;
+        }}
+        QComboBox QAbstractItemView {{
+            background: {SURFACE};
+            border: 1px solid {BORDER};
+            border-radius: 20px;
+            outline: none;
         }}
     """)
     return cb
@@ -710,7 +832,7 @@ class ItemCard(QFrame):
             QFrame {{
                 background-color: {SURFACE};
                 border: 1px solid {BORDER};
-                border-radius: 10px;
+                border-radius: 16px;
             }}
         """)
         self.setGraphicsEffect(make_shadow(blur=16, alpha=60, y=2))
@@ -732,7 +854,7 @@ class ItemCard(QFrame):
         self.img_label = QLabel()
         self.img_label.setFixedSize(ICON_DISPLAY_SIZE, ICON_DISPLAY_SIZE)
         self.img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.img_label.setStyleSheet(f"background: {SURFACE_ALT}; border-radius: 8px;")
+        self.img_label.setStyleSheet(f"background: {SURFACE_ALT}; border-radius: 20px;")
         img_row = QHBoxLayout()
         img_row.addStretch()
         img_row.addWidget(self.img_label)
@@ -759,7 +881,7 @@ class ItemCard(QFrame):
         self.status_label.setStyleSheet(f"""
             color: {chip_color};
             background: {chip_color}22;
-            border-radius: 6px;
+            border-radius: 16px;
             padding: 2px 8px;
             font-size: 10px;
             font-weight: 600;
@@ -774,13 +896,24 @@ class ItemCard(QFrame):
         self.btn_copy.clicked.connect(self.copy_single)
         outer.addWidget(self.btn_copy)
 
+        id_row = QHBoxLayout()
+        id_row.setSpacing(4)
+        self.btn_copy_id = ghost_button("📋 ID", color=TEXT_DIM)
+        self.btn_copy_id.clicked.connect(self.copy_id)
+        id_row.addWidget(self.btn_copy_id)
+
+        self.btn_open = ghost_button(LANGS[self.lang]["btn_open_page"], color=TEXT_DIM)
+        self.btn_open.clicked.connect(self.open_item)
+        id_row.addWidget(self.btn_open)
+        outer.addLayout(id_row)
+
         if is_catalog and on_add_to_player is not None:
             self.btn_action = QPushButton(LANGS[self.lang]["btn_add_player"])
             self.btn_action.setCursor(Qt.CursorShape.PointingHandCursor)
             self.btn_action.setStyleSheet(f"""
                 QPushButton {{
-                    padding: 8px; background: {GREEN}; color: #0d1f17;
-                    font-weight: 700; border-radius: 8px; border: none; font-size: 11px;
+                    padding: 8px; background: {GREEN}; color: {ON_ACCENT};
+                    font-weight: 700; border-radius: 20px; border: none; font-size: 11px;
                 }}
                 QPushButton:hover {{ background: #4fe0a0; }}
             """)
@@ -796,6 +929,7 @@ class ItemCard(QFrame):
     def update_language(self, new_lang):
         self.lang = new_lang
         self.btn_copy.setText(LANGS[self.lang]["btn_copy"])
+        self.btn_open.setText(LANGS[self.lang]["btn_open_page"])
         if hasattr(self, 'btn_action'):
             if self.is_catalog:
                 self.btn_action.setText(LANGS[self.lang]["btn_add_player"])
@@ -818,6 +952,13 @@ class ItemCard(QFrame):
             cmd = f"!pants {self.item['id']}"
         QApplication.clipboard().setText(cmd)
 
+    def copy_id(self):
+        QApplication.clipboard().setText(str(self.item['id']))
+
+    def open_item(self):
+        import webbrowser
+        webbrowser.open(f"https://www.roblox.com/catalog/{self.item['id']}")
+
     def update_status(self):
         status = LANGS[self.lang]["chip_offsale"] if self.item.get('is_unavail') else LANGS[self.lang]["chip_swapped"]
         chip_color = RED if self.item.get('is_unavail') else GREEN
@@ -825,7 +966,7 @@ class ItemCard(QFrame):
         self.status_label.setStyleSheet(f"""
             color: {chip_color};
             background: {chip_color}22;
-            border-radius: 6px;
+            border-radius: 16px;
             padding: 2px 8px;
             font-size: 10px;
             font-weight: 600;
@@ -836,6 +977,10 @@ class ItemCard(QFrame):
             return
         load_icon_async(self.item['icon'], self.img_label, ICON_DISPLAY_SIZE)
 
+    def resize_icon(self):
+        self.img_label.setFixedSize(ICON_DISPLAY_SIZE, ICON_DISPLAY_SIZE)
+        self.load_icon()
+
 
 class TownOutfitBuilder(QWidget):
     BASE_WIDTH = 960
@@ -843,8 +988,9 @@ class TownOutfitBuilder(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.lang = "RU"
+        self.lang = "EN"
         self.card_widgets = []
+        self.current_user_id = None
         self.cat_card_widgets = []
         self.on_top = False
         self.debug_open = False
@@ -863,14 +1009,64 @@ class TownOutfitBuilder(QWidget):
 
     def initUI(self):
         self.setWindowTitle("Town Outfit Builder (R6)")
-        self.resize(960, 700)
+        self.resize(1040, 700)
         self.setStyleSheet(f"""
             QWidget {{ background-color: {BG}; color: {TEXT}; font-family: 'Segoe UI', Sans; }}
             QScrollArea {{ border: none; background: transparent; }}
             QMessageBox {{ background-color: {SURFACE}; }}
         """)
 
-        main_layout = QVBoxLayout(self)
+        root_layout = QHBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+
+        # -- Боковая панель слева -------------------------------------
+        sidebar = QFrame()
+        sidebar.setFixedWidth(64)
+        sidebar.setStyleSheet(f"background: {SURFACE}; border-right: 1px solid {BORDER};")
+        side_layout = QVBoxLayout(sidebar)
+        side_layout.setContentsMargins(8, 16, 8, 16)
+        side_layout.setSpacing(10)
+        side_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        def side_btn(emoji, tooltip, handler):
+            b = QPushButton(emoji)
+            b.setFixedSize(48, 48)
+            b.setToolTip(tooltip)
+            b.setCursor(Qt.CursorShape.PointingHandCursor)
+            b.setStyleSheet(f"""
+                QPushButton {{
+                    background: {SURFACE_ALT}; color: {TEXT};
+                    border: 1px solid {BORDER}; border-radius: 24px; font-size: 18px;
+                }}
+                QPushButton:hover {{ background: {ACCENT}; color: {ON_ACCENT}; }}
+            """)
+            b.clicked.connect(handler)
+            return b
+
+        self.side_player_btn = side_btn("👤", LANGS[self.lang]["tab_player"], lambda: self.tabs.setCurrentIndex(0))
+        self.side_catalog_btn = side_btn("🛒", LANGS[self.lang]["tab_catalog"], lambda: self.tabs.setCurrentIndex(1))
+        side_layout.addWidget(self.side_player_btn)
+        side_layout.addWidget(self.side_catalog_btn)
+        side_layout.addStretch()
+
+        self.side_pin_btn = side_btn("📌", LANGS[self.lang]["pin_off"], self.toggle_always_on_top)
+        self.side_debug_btn = side_btn("🐞", LANGS[self.lang]["debug"], self.toggle_debug_panel)
+        self.side_zoom_in_btn = side_btn("+", "Icon size +", lambda: self.change_icon_size(ICON_SIZE_STEP))
+        self.side_zoom_out_btn = side_btn("−", "Icon size -", lambda: self.change_icon_size(-ICON_SIZE_STEP))
+        self.side_theme_btn = side_btn("🎨", "Theme", self.open_theme_dialog)
+        self.side_wiring_btn = side_btn("⚡", "Wiring Wiki", self.open_wiring_wiki)
+        side_layout.addWidget(self.side_pin_btn)
+        side_layout.addWidget(self.side_wiring_btn)
+        side_layout.addWidget(self.side_debug_btn)
+        side_layout.addWidget(self.side_zoom_in_btn)
+        side_layout.addWidget(self.side_zoom_out_btn)
+        side_layout.addWidget(self.side_theme_btn)
+
+        root_layout.addWidget(sidebar)
+
+        # -- Правая часть: заголовок + контент -------------------------
+        main_layout = QVBoxLayout()
         main_layout.setContentsMargins(16, 12, 16, 12)
         main_layout.setSpacing(10)
 
@@ -884,19 +1080,10 @@ class TownOutfitBuilder(QWidget):
         top_bar.addStretch()
 
         self.combo_lang = styled_combo()
-        self.combo_lang.addItems(["🌐 RU", "🌐 EN"])
+        self.combo_lang.addItems(["RU", "EN"])
+        self.combo_lang.setCurrentIndex(1)
         self.combo_lang.currentIndexChanged.connect(self.change_language)
         top_bar.addWidget(self.combo_lang)
-
-        self.btn_pin = ghost_button(LANGS[self.lang]["pin_off"])
-        self.btn_pin.setFixedWidth(150)
-        self.btn_pin.clicked.connect(self.toggle_always_on_top)
-        top_bar.addWidget(self.btn_pin)
-
-        self.btn_debug = ghost_button(LANGS[self.lang]["debug"])
-        self.btn_debug.setFixedWidth(100)
-        self.btn_debug.clicked.connect(self.toggle_debug_panel)
-        top_bar.addWidget(self.btn_debug)
 
         main_layout.addLayout(top_bar)
 
@@ -904,30 +1091,22 @@ class TownOutfitBuilder(QWidget):
         body_layout.setSpacing(10)
 
         self.notes_edit = QTextEdit()
-        self.notes_edit.setPlaceholderText("Заметки...")
+        self.notes_edit.setPlaceholderText(LANGS[self.lang]["notes_placeholder"])
         self.notes_edit.setFixedWidth(220)
         self.notes_edit.setStyleSheet(f"""
             QTextEdit {{
                 background: {SURFACE}; color: {TEXT};
-                border: 1px solid {BORDER}; border-radius: 8px;
+                border: 1px solid {BORDER}; border-radius: 20px;
                 padding: 8px; font-size: 12px;
+                selection-background-color: {ACCENT};
+                selection-color: {ON_ACCENT};
             }}
         """)
         body_layout.addWidget(self.notes_edit)
 
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: none; }}
-            QTabBar::tab {{
-                padding: 10px 18px;
-                background: {SURFACE};
-                color: {TEXT_DIM};
-                margin-right: 4px;
-                border-radius: 8px;
-                font-weight: 600;
-            }}
-            QTabBar::tab:selected {{ background: {ACCENT}; color: white; }}
-        """)
+        self.tabs.tabBar().setVisible(False)
+        self.tabs.setStyleSheet("QTabWidget::pane { border: none; }")
 
         self.tab_player = QWidget()
         self.setup_player_tab()
@@ -946,16 +1125,22 @@ class TownOutfitBuilder(QWidget):
             font-size: 11px;
             padding: 6px 10px;
             background: {SURFACE};
-            border-radius: 6px;
+            border-radius: 16px;
         """)
         main_layout.addWidget(self.status_bar)
+
+        root_layout.addLayout(main_layout, 1)
 
     def change_language(self, index):
         self.lang = "RU" if index == 0 else "EN"
         self.debug_panel.set_language(self.lang)
 
-        self.btn_pin.setText(LANGS[self.lang]["pin_on"] if self.on_top else LANGS[self.lang]["pin_off"])
-        self.btn_debug.setText(LANGS[self.lang]["debug"])
+        self.side_player_btn.setToolTip(LANGS[self.lang]["tab_player"])
+        self.side_catalog_btn.setToolTip(LANGS[self.lang]["tab_catalog"])
+        self.notes_edit.setPlaceholderText(LANGS[self.lang]["notes_placeholder"])
+        self.btn_open_profile.setText(LANGS[self.lang]["btn_open_page"])
+        self.side_pin_btn.setToolTip(LANGS[self.lang]["pin_on"] if self.on_top else LANGS[self.lang]["pin_off"])
+        self.side_debug_btn.setToolTip(LANGS[self.lang]["debug"])
         self.tabs.setTabText(0, LANGS[self.lang]["tab_player"])
         self.tabs.setTabText(1, LANGS[self.lang]["tab_catalog"])
 
@@ -993,22 +1178,22 @@ class TownOutfitBuilder(QWidget):
         flags = self.windowFlags()
         if self.on_top:
             flags |= Qt.WindowType.WindowStaysOnTopHint
-            self.btn_pin.setText(LANGS[self.lang]["pin_on"])
-            self.btn_pin.setStyleSheet(f"""
+            self.side_pin_btn.setToolTip(LANGS[self.lang]["pin_on"])
+            self.side_pin_btn.setStyleSheet(f"""
                 QPushButton {{
-                    padding: 8px 14px; background: {ACCENT}; color: white;
-                    font-weight: 600; border-radius: 8px; border: none;
+                    background: {ACCENT}; color: {ON_ACCENT};
+                    border: 1px solid {BORDER}; border-radius: 18px; font-size: 18px;
                 }}
             """)
         else:
             flags &= ~Qt.WindowType.WindowStaysOnTopHint
-            self.btn_pin.setText(LANGS[self.lang]["pin_off"])
-            self.btn_pin.setStyleSheet(f"""
+            self.side_pin_btn.setToolTip(LANGS[self.lang]["pin_off"])
+            self.side_pin_btn.setStyleSheet(f"""
                 QPushButton {{
-                    padding: 8px 14px; background: transparent; color: {TEXT_DIM};
-                    font-weight: 600; border-radius: 8px; border: 1px solid {BORDER};
+                    background: {SURFACE_ALT}; color: {TEXT};
+                    border: 1px solid {BORDER}; border-radius: 18px; font-size: 18px;
                 }}
-                QPushButton:hover {{ background: {SURFACE_ALT}; color: {TEXT}; }}
+                QPushButton:hover {{ background: {ACCENT}; color: {ON_ACCENT}; }}
             """)
         self.setWindowFlags(flags)
         self.show()
@@ -1049,7 +1234,7 @@ class TownOutfitBuilder(QWidget):
 
         avatar_frame = QFrame()
         avatar_frame.setFixedSize(AVATAR_DISPLAY_SIZE + 20, AVATAR_DISPLAY_SIZE + 20)
-        avatar_frame.setStyleSheet(f"background: {SURFACE}; border-radius: 14px; border: 1px solid {BORDER};")
+        avatar_frame.setStyleSheet(f"background: {SURFACE}; border-radius: 20px; border: 1px solid {BORDER};")
         avatar_frame.setGraphicsEffect(make_shadow())
         af_layout = QVBoxLayout(avatar_frame)
         self.avatar_label = QLabel(LANGS[self.lang]["avatar_placeholder"])
@@ -1059,12 +1244,22 @@ class TownOutfitBuilder(QWidget):
         af_layout.addWidget(self.avatar_label)
         left_box.addWidget(avatar_frame)
 
+        profile_row = QHBoxLayout()
+        profile_row.setSpacing(4)
+        self.btn_copy_uid = ghost_button("📋 ID", color=TEXT_DIM)
+        self.btn_copy_uid.clicked.connect(self.copy_player_id)
+        profile_row.addWidget(self.btn_copy_uid)
+        self.btn_open_profile = ghost_button(LANGS[self.lang]["btn_open_page"], color=TEXT_DIM)
+        self.btn_open_profile.clicked.connect(self.open_player_profile)
+        profile_row.addWidget(self.btn_open_profile)
+        left_box.addLayout(profile_row)
+
         self.btn_swap = QPushButton(LANGS[self.lang]["btn_swap"])
         self.btn_swap.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_swap.setStyleSheet(f"""
             QPushButton {{
-                padding: 10px; background: {ORANGE}; color: #1e1e1e;
-                font-weight: 700; border-radius: 8px; border: none;
+                padding: 10px; background: {ORANGE}; color: {ON_ACCENT};
+                font-weight: 700; border-radius: 20px; border: none;
             }}
             QPushButton:hover {{ background: #f0b357; }}
         """)
@@ -1117,8 +1312,8 @@ class TownOutfitBuilder(QWidget):
         self.btn_copy_all.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_copy_all.setStyleSheet(f"""
             QPushButton {{
-                padding: 13px; background: {GREEN}; color: #0d1f17;
-                font-weight: 700; border-radius: 8px; border: none; font-size: 13px;
+                padding: 13px; background: {GREEN}; color: {ON_ACCENT};
+                font-weight: 700; border-radius: 20px; border: none; font-size: 13px;
             }}
             QPushButton:hover {{ background: #4fe0a0; }}
         """)
@@ -1260,6 +1455,73 @@ class TownOutfitBuilder(QWidget):
         msg = f"«{item['name']}» added to outfit" if self.lang == "EN" else f"«{item['name']}» добавлен в текущий сет"
         self.set_status(msg)
 
+    def change_icon_size(self, delta):
+        global ICON_DISPLAY_SIZE
+        new_size = max(ICON_SIZE_MIN, min(ICON_SIZE_MAX, ICON_DISPLAY_SIZE + delta))
+        if new_size == ICON_DISPLAY_SIZE:
+            return
+        ICON_DISPLAY_SIZE = new_size
+        for card in self.card_widgets:
+            card.resize_icon()
+        for card in self.cat_card_widgets:
+            card.resize_icon()
+
+    def open_wiring_wiki(self):
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Wiring — Roblox Town Wiki")
+        dlg.resize(640, 560)
+        dlg.setStyleSheet(f"QDialog {{ background: {SURFACE}; }}")
+        layout = QVBoxLayout(dlg)
+
+        view = QTextEdit()
+        view.setReadOnly(True)
+        view.setStyleSheet(f"""
+            QTextEdit {{
+                background: {BG}; color: {TEXT}; border: 1px solid {BORDER};
+                border-radius: 16px; padding: 12px; font-size: 13px;
+            }}
+        """)
+        view.setText("Loading…")
+        layout.addWidget(view)
+
+        btn_row = QHBoxLayout()
+        btn_browser = ghost_button("🌐 Open in browser", color=TEXT_DIM)
+        btn_browser.clicked.connect(lambda: __import__("webbrowser").open("https://roblox-town.fandom.com/wiki/Wiring"))
+        btn_row.addWidget(btn_browser)
+        btn_row.addStretch()
+        btn_close = primary_button("Close")
+        btn_close.clicked.connect(dlg.close)
+        btn_row.addWidget(btn_close)
+        layout.addLayout(btn_row)
+
+        loader = WikiPageLoader("https://roblox-town.fandom.com/wiki/Wiring")
+        loader.loaded.connect(view.setText)
+        loader.start()
+        dlg._loader = loader
+
+        dlg.exec()
+
+    def open_theme_dialog(self):
+        themes = load_themes()
+        names = list(themes.keys())
+        current = load_active_theme_name()
+        idx = names.index(current) if current in names else 0
+        choice, ok = QInputDialog.getItem(
+            self, "Theme", "Select theme:", names, idx, False
+        )
+        if ok and choice and choice != current:
+            save_active_theme_name(choice)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    def copy_player_id(self):
+        if self.current_user_id:
+            QApplication.clipboard().setText(str(self.current_user_id))
+
+    def open_player_profile(self):
+        if self.current_user_id:
+            import webbrowser
+            webbrowser.open(f"https://www.roblox.com/users/{self.current_user_id}/profile")
+
     def start_fetch(self):
         nick = self.input_nick.text().strip()
         if not nick:
@@ -1280,6 +1542,7 @@ class TownOutfitBuilder(QWidget):
         QMessageBox.critical(self, LANGS[self.lang]["err_title"], e)
 
     def on_data_loaded(self, data):
+        self.current_user_id = data.get("user_id")
         load_icon_async(data["avatar_img"], self.avatar_label, AVATAR_DISPLAY_SIZE)
 
         cols = self._grid_columns(self.scroll)
@@ -1386,6 +1649,9 @@ class TownOutfitBuilder(QWidget):
 
 
 if __name__ == "__main__":
+    if not THEMES_FILE.exists():
+        save_themes(DEFAULT_THEMES)
+
     app = QApplication(sys.argv)
 
     guard = SingleInstanceGuard()
