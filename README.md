@@ -13,7 +13,6 @@
 ## English
 
 **MIMICRIA** is a Python application designed to inspect Roblox avatar profiles, extract equipped asset IDs, and generate executable commands to mimic their outfit in-game.
-PyQt6 is needed to run it.
 
 Works seamlessly on both **Windows** and **Linux**.
 
@@ -21,33 +20,40 @@ Works seamlessly on both **Windows** and **Linux**.
 * 🔍 **Avatar Inspection:** Instantly fetch equipped items from any user by Username or UserID.
 * ⚡ **Command Generation:** Automatically builds ready-to-use in-game wear commands.
 * 🖥️ **GUI:** Clean and simple interface powered by PyQt6.
+* 🎨 **Themes:** Dark/Light built-in, custom themes via `themes.json`.
 * 🐧 **Cross-Platform:** Full support for Windows and Linux systems.
 
 ### 🛠️ Installation & Setup
 
-**1. Clone the repository**
+**1. Install Python**
+Make sure Python 3.8+ is installed.
+- **Windows:** download from [python.org](https://www.python.org/downloads/) — during install, check **"Add python.exe to PATH"**.
+- **Linux:** usually preinstalled. If not: `sudo apt install python3 python3-pip` (Debian/Ubuntu).
+
+**2. Get the files**
+Download `Mimicria[0.3].py` and `themes.json` from this repo into the same folder (use the green **Code → Download ZIP** button, or download the files individually).
+
+**3. Run the script**
+
+**Windows (PowerShell / CMD):**
 ```bash
-git clone https://github.com/YOUR_USERNAME/MIMICRIA.git
-cd MIMICRIA
+py -m pip install PyQt6
+py "Mimicria[0.3].py"
 ```
 
-**2. Run the script**
-PyQt6 will be installed automatically on first run if it's missing:
-```bash
-python MIMICRIA.py
-```
-On Linux, if your system requires `--break-system-packages`, install the dependency manually beforehand:
+**Linux:**
 ```bash
 pip install PyQt6 --break-system-packages
-python3 MIMICRIA.py
+python3 "Mimicria[0.3].py"
 ```
+
+PyQt6 will also try to install itself automatically on first run if it's missing — the manual `pip install` step above is a fallback in case that fails.
 
 ---
 
 ## Русский
 
 **MIMICRIA** — приложение на Python для анализа профилей аватаров Roblox: извлекает ID надетых предметов и генерирует готовые команды, чтобы повторить чужой образ прямо в игре.
-Для запуска нужен PyQt6.
 
 Полностью работает на **Windows** и **Linux**.
 
@@ -55,23 +61,31 @@ python3 MIMICRIA.py
 * 🔍 **Анализ аватара:** мгновенно получает список надетых вещей по никнейму или UserID.
 * ⚡ **Генерация команд:** автоматически собирает готовые команды для надевания в игре.
 * 🖥️ **GUI:** простой и чистый интерфейс на PyQt6.
+* 🎨 **Темы:** встроенные Dark/Light, кастомные темы через `themes.json`.
 * 🐧 **Кроссплатформенность:** полная поддержка Windows и Linux.
 
 ### 🛠️ Установка и запуск
 
-**1. Клонируйте репозиторий**
+**1. Установите Python**
+Нужен Python 3.8 или новее.
+- **Windows:** скачайте с [python.org](https://www.python.org/downloads/) — при установке обязательно поставьте галочку **"Add python.exe to PATH"**.
+- **Linux:** обычно уже есть. Если нет: `sudo apt install python3 python3-pip` (Debian/Ubuntu).
+
+**2. Скачайте файлы**
+Скачайте `Mimicria[0.3].py` и `themes.json` из репозитория в одну папку (кнопка **Code → Download ZIP**, либо файлы по отдельности).
+
+**3. Запустите скрипт**
+
+**Windows (PowerShell / CMD):**
 ```bash
-git clone https://github.com/YOUR_USERNAME/MIMICRIA.git
-cd MIMICRIA
+py -m pip install PyQt6
+py "Mimicria[0.3].py"
 ```
 
-**2. Запустите скрипт**
-PyQt6 установится автоматически при первом запуске, если его нет:
-```bash
-python MIMICRIA.py
-```
-На Linux, если система требует `--break-system-packages`, установите зависимость вручную заранее:
+**Linux:**
 ```bash
 pip install PyQt6 --break-system-packages
-python3 MIMICRIA.py
+python3 "Mimicria[0.3].py"
 ```
+
+PyQt6 также попытается установиться автоматически при первом запуске, если его нет — ручная установка выше нужна на случай, если автоустановка не сработает.
